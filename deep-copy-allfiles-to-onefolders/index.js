@@ -15,7 +15,7 @@ function getFile(filePath, init) {
       console.warn(err, "读取文件夹错误！");
     } else {
       if (init) {
-        fs.rmdirSync(folderName);
+        fs.rmdirSync(folderName, { recursive: true });
         fs.mkdirSync(folderName);
       }
 
