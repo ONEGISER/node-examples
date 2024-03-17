@@ -1,0 +1,19 @@
+{
+  "name": "copy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@gis-js/geojson2shp": "^1.0.1",
+    "fs": "0.0.1-security",
+    "jszip": "^3.10.1",
+    "node-xlsx": "^0.23.0",
+    "path": "^0.12.7",
+    "shapefile": "^0.6.6"
+  }
+}

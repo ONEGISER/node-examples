@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const filePath = path.resolve(
-  "E://test//folder"//todo
+  "E://干旱//甘肃省评估与区划成果//山丘区中小河流洪水淹没范围图层集合（含元数据）//623000_甘南州_山丘区中小河流洪水淹没图_20221128" //todo
 );
 
 const folderName = "newFiles";
