@@ -106,6 +106,7 @@ function handlerFiles(names, filePath) {
                     if (result.done) {
                       console.log(`${i} dbf done`);
                       const sheets = xlsx.parse(filePath + "/" + xls);
+                      console.log(`${i} xls done`);
                       const sheet = sheets[0];
                       if (sheet?.data) {
                         let headerFields = [];
