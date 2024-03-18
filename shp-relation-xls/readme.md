@@ -1,4 +1,4 @@
-# 链接shp的属性信息
+# 链接shp的属性信息（替换或者追加属性）
 
 # 运行环境
 `nodejs` https://nodejs.org/en
