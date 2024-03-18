@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@gis-js/geojson2shp": "^1.0.1",
+    "compressing": "^1.10.0",
     "fs": "0.0.1-security",
     "jszip": "^3.10.1",
     "node-xlsx": "^0.23.0",

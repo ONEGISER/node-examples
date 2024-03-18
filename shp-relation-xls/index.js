@@ -2,22 +2,34 @@ const fs = require("fs");
 const path = require("path");
 const shapefile = require("shapefile");
 const xlsx = require("node-xlsx");
-const { convert } = require("geojson2shp");
-const geojson2shape = require("geojson2shape");
-const ogr2ogr = require("ogr2ogr").default;
 const { GeoJson2Shp } = require("@gis-js/geojson2shp");
 const JSZip = require("jszip");
+const compressing = require("compressing");
 
 const filePath = path.resolve("oldFiles");
 // --------------------------------------------
 /**
  * 参数
  */
-const encoding = "utf-8"; //shp的编码
+const encodings = { "2023涉河建筑物": "utf-8", "2022年涉河建筑物": "GBK" }; //shp的编码
 const shpRelationId = "code"; //shp的关联id
 const xlsTableHeaderIndex = 1; //excel字段起始列
 const xlsRelationId = "BM"; //excel的关联id
-const deleteFields = ["code", "市", "县"]; //结果里需要删除的阶段
+const deleteFields = [
+  "code",
+  "市",
+  "县",
+  "经度",
+  "纬度",
+  "位置",
+  "河流",
+  "名称",
+  "年份",
+  "备注",
+  "类型",
+]; //结果里需要删除的字段
+const toStringFields = ["BM", "年份", "显隐", "LXBM", "YXCJRQ", "JD", "WD"]; //转成字符串的字段
+
 // --------------------------------------------
 
 getFile(filePath, true);
@@ -51,9 +63,6 @@ function getFile(filePath, init) {
                 //最后解析到了文件
                 handlerFiles(names, filePath);
               }
-              // fs.copyFile(filedir, folderName + "/" + filename, (err) => {
-              //   if (err) throw err;
-              // });
             }
           }
         });
@@ -78,7 +87,9 @@ function handlerFiles(names, filePath) {
             if (result.done) {
               console.log("shp done");
               shapefile
-                .openDbf(filePath + "/" + dbf, { encoding })
+                .openDbf(filePath + "/" + dbf, {
+                  encoding: encodings[i] ? encodings[i] : "utf-8",
+                })
                 .then((source) => {
                   const properties = [];
                   source.read().then(async function log(result) {
@@ -114,10 +125,16 @@ function handlerFiles(names, filePath) {
                             deleteFields.forEach((field) => {
                               delete properties[i][field];
                             });
+
                             data.properties = {
                               ...properties[i],
                               ...result[bmValue],
                             };
+                            toStringFields.forEach((field) => {
+                              if (data.properties[field] !== undefined)
+                                data.properties[field] =
+                                  data.properties[field]?.toString();
+                            });
                           } else {
                             console.log("属性错乱！");
                           }
@@ -128,7 +145,7 @@ function handlerFiles(names, filePath) {
                           crs: {
                             type: "name",
                             properties: {
-                              name: "urn:ogc:def:crs:OGC:1.3:CRS84",
+                              name: "urn:ogc:def:crs:EPSG::4490",
                             },
                           },
                           features: features,
@@ -140,47 +157,58 @@ function handlerFiles(names, filePath) {
                             if (err) {
                               console.error(err);
                             } else {
-                              console.log("success");
+                              console.log("geojson success");
                             }
                           }
                         );
-                        // var g2s = new GeoJson2Shp(jsonObj);
-                        // var zip = new JSZip(),
-                        //   layers = zip.folder(filePath + "/" + i);
-                        // var cpg = "UTF-8";
+                        const g2s = new GeoJson2Shp(jsonObj);
+                        const zip = new JSZip();
+                        const layers = zip.folder("");
+                        const cpg = "UTF-8";
 
-                        // var projection =
-                        //   'GEOGCS["GCS_China_Geodetic_Coordinate_System_2000",DATUM["D_China_2000",SPHEROID["CGCS2000",6378137.0,298.257222101]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]';
-                        // g2s.writePolygon(
-                        //   function (err, files) {
-                        //     var fileName = i;
-                        //     layers.file(fileName + ".shp", files.shp.buffer, {
-                        //       binary: true,
-                        //     });
-                        //     layers.file(fileName + ".shx", files.shx.buffer, {
-                        //       binary: true,
-                        //     });
-                        //     layers.file(fileName + ".dbf", files.dbf.buffer, {
-                        //       binary: true,
-                        //     });
-                        //     layers.file(fileName + ".prj", projection);
-                        //     layers.file(fileName + ".cpg", cpg);
-                        //   }.bind(this)
-                        // );
-                        // zip
-                        //   .generateAsync({ type: "nodebuffer" })
-                        //   .then(function (content) {
-                        //     fs.writeFile(
-                        //       filePath + "/" + i,
-                        //       content,
-                        //       function (err) {
-                        //         if (!err) {
-                        //         } else {
-                        //           console.log(zip + "压缩失败");
-                        //         }
-                        //       }
-                        //     );
-                        //   });
+                        const projection =
+                          'GEOGCS["GCS_China_Geodetic_Coordinate_System_2000",DATUM["D_China_2000",SPHEROID["CGCS2000",6378137.0,298.257222101]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]';
+                        g2s.writePolygon(
+                          function (err, files) {
+                            var fileName = i;
+                            layers.file(fileName + ".shp", files.shp.buffer, {
+                              binary: true,
+                            });
+                            layers.file(fileName + ".shx", files.shx.buffer, {
+                              binary: true,
+                            });
+                            layers.file(fileName + ".dbf", files.dbf.buffer, {
+                              binary: true,
+                            });
+                            layers.file(fileName + ".prj", projection);
+                            layers.file(fileName + ".cpg", cpg);
+                          }.bind(this)
+                        );
+                        zip
+                          .generateAsync({ type: "nodebuffer" })
+                          .then(function (content) {
+                            const zipPath = folderName + "/" + i + ".zip";
+                            fs.writeFile(
+                              zipPath,
+                              content,
+                              async function (err) {
+                                if (!err) {
+                                  compressing.zip
+                                    .uncompress(zipPath, folderName)
+                                    .then(() => {
+                                      console.log("unzip success");
+                                      fs.unlinkSync(zipPath);
+                                      console.log("zip  delete success");
+                                    })
+                                    .catch((err) => {
+                                      console.log(err);
+                                    });
+                                } else {
+                                  console.log(zip + "压缩失败");
+                                }
+                              }
+                            );
+                          });
                       }
 
                       return;
