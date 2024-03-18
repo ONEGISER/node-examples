@@ -15,16 +15,20 @@ const encodings = { "2023涉河建筑物": "utf-8", "2022年涉河建筑物": "G
 const shpRelationId = "code"; //shp的关联id
 const xlsTableHeaderIndex = 1; //excel字段起始列
 const xlsRelationId = "BM"; //excel的关联id
-const deleteFields = []; //结果里需要删除的字段
-const toStringFields = ["code", "经度", "纬度", "年份"]; //转成字符串的字段
-const replaceFields = {
-  市: "S",
-  县: "X",
-  位置: "WZ",
-  河流: "RV_NAME",
-  名称: "XMMC",
-  类型: "LXMC",
-};
+const deleteFields = [
+  "code",
+  "市",
+  "县",
+  "经度",
+  "纬度",
+  "位置",
+  "河流",
+  "名称",
+  "年份",
+  "备注",
+  "类型",
+]; //结果里需要删除的字段
+const toStringFields = ["BM", "年份", "显隐", "LXBM", "YXCJRQ", "JD", "WD"]; //转成字符串的字段
 
 // --------------------------------------------
 
@@ -122,15 +126,10 @@ function handlerFiles(names, filePath) {
                               delete properties[i][field];
                             });
 
-                            for (let item in properties[i]) {
-                              if (replaceFields[item]) {
-                                //替换数据
-                                properties[i][item] =
-                                  result[bmValue][replaceFields[item]];
-                              }
-                            }
-                            data.properties = properties[i];
-                            //转换字段类型
+                            data.properties = {
+                              ...properties[i],
+                              ...result[bmValue],
+                            };
                             toStringFields.forEach((field) => {
                               if (data.properties[field] !== undefined)
                                 data.properties[field] =
