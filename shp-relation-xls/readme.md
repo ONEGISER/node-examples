@@ -11,6 +11,11 @@
 `npm start`
 
 
+# 预备
+需要手动创建两个文件夹
+oldFiles：放要转换的文件
+newFiles：存放转换完成的文件
+
 #  参数说明
 ```javascript
 const encodings = { "2023涉河建筑物": "utf-8", "2022年涉河建筑物": "GBK" }; //shp的编码
